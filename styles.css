@@ -1,3 +1,31 @@
+/* =========================
+   Product Sans font faces
+   ========================= */
+@font-face {
+  font-family: 'Product Sans';
+  src: url('assets/fonts/ProductSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Product Sans';
+  src: url('assets/fonts/ProductSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Product Sans';
+  src: url('assets/fonts/ProductSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =========================
+   Theme variables
+   ========================= */
 :root{
   --glass: rgba(17, 24, 39, 0.55);
   --panel: rgba(18, 26, 45, 0.86);
@@ -13,15 +41,22 @@
   --max-stage: 520px;
 }
 
-/* Base document */
+/* =========================
+   Base
+   ========================= */
 html, body { height: 100%; margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
 body{
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: 'Product Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background: #0b1220 url('assets/bg.jpg') center/cover fixed no-repeat;
+  font-weight: 400; /* Regular default */
 }
+[hidden] { display: none !important; }
 
-/* 3-row page grid: header | main | footer */
+/* =========================
+   Layout
+   ========================= */
 .page-wrap{
   min-height: 100vh;
   display: grid;
@@ -29,27 +64,41 @@ body{
   background: linear-gradient(180deg, rgba(11,18,32,0.25), rgba(11,18,32,0.75));
   backdrop-filter: blur(4px);
 }
-
 .site-header{ padding: 12px 16px; text-align: center; }
 .brand-title{
-  margin: 0; font-size: 22px; font-weight: 800; letter-spacing: .3px;
-  color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700; /* Bold */
+  letter-spacing: .3px;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
 }
 .site-footer{
-  color:#cbd5e1; text-align:center; padding:12px;
+  color:#cbd5e1;
+  text-align:center;
+  padding:12px;
   text-shadow:0 1px 8px rgba(0,0,0,0.4);
+  font-weight: 400; /* Regular */
+}
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+button:focus-visible, input[type="range"]:focus-visible, label.btn:focus-visible {
+  outline: 2px solid var(--brand-2); outline-offset: 2px; border-radius: 12px;
 }
 
-/* Main layout: mobile first (stacked) */
+/* =========================
+   Main
+   ========================= */
 .content.two-col{
   display: grid;
   grid-template-columns: 1fr;
   gap: 18px;
   padding: 12px 16px 24px;
-  min-height: 0; /* allow child sections to shrink inside page grid */
+  min-height: 0;
 }
 
-/* Stage card and canvas area */
+/* =========================
+   Stage
+   ========================= */
 .stage-card{
   background: rgba(23, 34, 62, 0.76);
   border: 1px solid rgba(255, 255, 255, 0.292);
@@ -68,7 +117,10 @@ body{
   box-shadow:inset 0 0 0 1px rgba(255,255,255,0.09);
   overscroll-behavior: contain;
   transform: translateZ(0);
-  min-height: 0; /* ensure it can shrink inside stage-card */
+  min-height: 0;
+  contain: layout paint size;
+  backface-visibility: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 #photoCanvas{
   position:absolute; inset:0; width:100%; height:100%;
@@ -77,34 +129,49 @@ body{
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-  will-change: transform;
 }
+#photoCanvas:active { cursor: grabbing; }
 #frame{
   position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; z-index:2;
-  pointer-events: none;
+  object-fit:cover; z-index:2; pointer-events: none;
 }
 .frame-hint{
   position:absolute; top:8px; left:8px;
   background:rgba(0,0,0,0.55); color:#fff;
   font-size:12px; padding:4px 8px; border-radius:8px;
-  z-index:3; display:none;
+  z-index:3; display:none; pointer-events: none;
 }
-#sourceImage, #sourceVideo{ display:none; }
+#sourceImage { display:none; }
 
-/* Controls panel */
+/* =========================
+   Controls
+   ========================= */
 .controls{
   background:var(--panel-strong);
-   border: 1px solid rgba(255, 255, 255, 0.292);
+  border: 1px solid rgba(255, 255, 255, 0.292);
   border-radius:14px;
   padding:12px;
 }
 .sliders{ display:grid; gap:10px; margin-bottom:10px; }
 .slider-row{
   display:grid; grid-template-columns:72px 1fr; gap:12px;
-  align-items:center; color:var(--muted); font-weight:700;
+  align-items:center; color:var(--muted);
+  font-weight:600; /* SemiBold labels */
 }
-input[type="range"]{ width:100%; accent-color:var(--brand); }
+input[type="range"]{
+  width:100%; accent-color:var(--brand);
+  -webkit-appearance: none; appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--brand);
+  margin-top: -7px;
+}
+input[type="range"]::-moz-range-thumb{
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--brand);
+}
 
 .rotate-row{ display:flex; gap:8px; justify-content:center; margin:6px 0 12px; }
 .rotate-row.one{ justify-content:center; margin:6px 0 10px; }
@@ -117,19 +184,25 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
 }
 .btn{
   border:0; padding:10px 16px; border-radius:var(--btn-radius);
-  font-size:15px; font-weight:800; cursor:pointer;
+  font-size:15px;
+  font-weight:600; /* SemiBold for buttons */
+  cursor:pointer;
   transition:transform .08s ease,box-shadow .2s ease,opacity .2s;
   display:inline-flex; align-items:center; gap:8px;
   box-shadow:0 4px 14px rgba(0,0,0,0.25);
 }
+.btn:hover, .joy-btn:hover { filter: brightness(1.06); }
+.btn:focus-visible, .joy-btn:focus-visible { box-shadow: 0 0 0 3px rgba(79,127,255,0.35); }
 .btn:active{ transform:translateY(1px) scale(0.99); }
 .btn-primary{
   background:linear-gradient(135deg,var(--brand),#7b68ff);
   color:#fff;
+  font-weight:700; /* Bold for primary CTA */
 }
 .btn-upload{
   background:linear-gradient(135deg,var(--brand-2),#3cf0c5);
   color:#042026; position:relative; overflow:hidden;
+  font-weight:600; /* SemiBold */
 }
 .btn-upload input[type="file"]{
   position:absolute; inset:0; opacity:0; cursor:pointer;
@@ -138,9 +211,12 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
 .msg{
   margin:10px 0 0; min-height:18px;
   color:#fca5a5; font-size:13px; text-align:center;
+  font-weight:400; /* Regular */
 }
 
-/* Tips panel */
+/* =========================
+   Tips
+   ========================= */
 .tips{
   background: var(--glass);
   margin-top: 12px;
@@ -150,11 +226,17 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
   color: var(--text);
   box-shadow: var(--shadow);
 }
-.tips h3{ margin: 0 0 8px; color: #fff; }
+.tips h3{
+  margin: 0 0 8px;
+  color: #fff;
+  font-weight:700; /* Bold section title (optional) */
+}
 .tips ul{ margin: 0; padding-left: 18px; }
-.tips li{ margin: 6px 0; color: var(--muted); }
+.tips li{ margin: 6px 0; color: var(--muted); font-weight:400; /* Regular */ }
 
-/* Joystick styles */
+/* =========================
+   Joystick
+   ========================= */
 .joystick{
   display:grid;
   grid-template-rows:auto auto auto;
@@ -174,7 +256,7 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
   background:var(--ghost);
   color:#fff;
   font-size:18px;
-  font-weight:800;
+  font-weight:600; /* SemiBold */
   box-shadow:0 4px 12px rgba(0,0,0,0.25);
   cursor:pointer;
   transition:transform .05s ease, background .15s ease, opacity .15s ease;
@@ -184,34 +266,22 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
   font-size:14px;
   background:linear-gradient(135deg, var(--brand), #7b68ff);
   color:#fff;
+  font-weight:600; /* SemiBold */
 }
 #btn-rotate{ min-width:160px; }
 
-/* Desktop two-column layout; footer always visible; no full-page scroll */
-/* DESKTOP FIX: no crop on left preview, footer always visible */
-/* FINAL DESKTOP CONSTRAINTS: keep footer visible, no crop, no overlap */
+/* =========================
+   Desktop
+   ========================= */
 @media (min-width: 1024px){
-  html, body { overflow: hidden; }
+  .page-wrap { overflow: hidden; }
 
-  /* Centered two-column layout with balanced space */
   .content.two-col{
-    /* Equal flexible columns with sensible min/max */
-    grid-template-columns:  minmax(460px,400px)
-      minmax(420px, 1fr);
-    /* Use a moderate, consistent gap between columns */
-    gap: 40px;
-
-    /* Center the whole grid strip */
-    padding: 24px 24px;
-    max-width: 1200px;   /* total width cap */
-    width: 100%;
-    margin: 0 auto;      /* centers the grid in the page */
-
-    height: 100%;
-    min-height: 0;
+    grid-template-columns: minmax(400px, 520px) minmax(420px, 1fr);
+    gap: 40px; padding: 24px 24px; max-width: 1200px; width: 100%; margin: 0 auto;
+    height: 100%; min-height: 0; overflow: auto;
   }
 
-  /* Left stage sizing: no crop, stays within viewport */
   .stage-card{
     display: flex;
     align-items: center;
@@ -225,8 +295,8 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
     aspect-ratio: calc(1080/1350);
     height: 100%;
     max-height: 74vh;
-    width: auto;         /* width derives from height -> preserves aspect */
-    max-width: 100%;     /* never exceed column width */
+    width: auto;
+    max-width: 100%;
     margin: 0 auto;
     position: relative;
     overflow: hidden;
@@ -238,7 +308,6 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
     object-fit: cover;
   }
 
-  /* Right column stacks controls + tips tightly */
   .right-rail{
     display: flex;
     flex-direction: column;
@@ -247,46 +316,83 @@ input[type="range"]{ width:100%; accent-color:var(--brand); }
     overflow: visible;
     min-width: 0;
     min-height: 0;
+    max-height: 74vh;
   }
 
   .controls{ flex: 0 0 auto; }
 
   .tips{
     flex: 0 0 auto;
-    overflow: visible;
+    overflow: auto;
     max-width: 520px;
     padding: 14px;
+    max-height: 40vh;
   }
 
   .site-footer{
     position: static;
     padding: 10px 16px;
   }
-
-  
 }
-/* Mobile: shrink the whole controls card */
-@media (max-width: 1023.98px){
-  /* Scale the card down around its center */
-  .controls{
-    
-    transform-origin: top center;
-  }
 
-  /* Reduce internal paddings and gaps for tighter layout */
-  .controls{ padding: 10px; }
+/* =========================
+   Mobile
+   ========================= */
+@media (max-width: 1023.98px){
+  .controls{ transform-origin: top center; padding: 10px; }
   .joystick{ gap: 4px; margin: 6px 0 10px; }
   .joy-btn{ width: 40px; height: 40px; font-size: 16px; }
   #joy-center{ font-size: 13px; }
-
   .rotate-row.one{ margin: 6px 0 8px; }
   #btn-rotate{ min-width: 0; padding: 8px 12px; }
-
   .slider-row{ grid-template-columns: 64px 1fr; gap: 10px; }
   input[type="range"]{ height: 4px; }
-
   .actions{ gap: 8px; }
   .btn{ padding: 8px 12px; font-size: 14px; }
 }
 
+/* =========================
+   Touch
+   ========================= */
+@media (hover: none) and (pointer: coarse){
+  .joy-btn { width: 48px; height: 48px; font-size: 18px; }
+  #btn-rotate { padding: 10px 14px; }
+  input[type="range"] { height: 6px; }
+}
 
+/* =========================
+   Reduced motion
+   ========================= */
+@media (prefers-reduced-motion: reduce){
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================
+   Visual polish
+   ========================= */
+.canvas-wrap.glow #frame {
+  filter: drop-shadow(0 0 14px rgba(79,127,255,0.35))
+          drop-shadow(0 0 24px rgba(38,210,255,0.25));
+}
+
+.joy-btn.is-active {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(1.12);
+}
+/* Particles background behind the main canvas */
+.fx-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0; /* photoCanvas z:1, frame z:2 */
+  pointer-events: none;
+}
+#particlesCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
