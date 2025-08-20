@@ -17,7 +17,7 @@ const CANVAS_W = canvas.width;
 const CANVAS_H = canvas.height;
 
 // State
-let mediaType = null;     // "image" or "video"
+let mediaType = null;     // "image" or ""
 let mediaLoaded = false;
 let scale = 1;
 let rotationDeg = 0;
@@ -217,9 +217,10 @@ async function exportVideo() {
 // Download button
 downloadBtn.addEventListener('click', () => {
   if (!mediaLoaded) {
-    showMsg('Please upload an image or video first.');
+    showMsg('Please upload an image first.');
     return;
   }
   if (mediaType === 'image') exportImage();
   else exportVideo();
 });
+
