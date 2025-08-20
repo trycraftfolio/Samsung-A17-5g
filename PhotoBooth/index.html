@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Galaxy A17 5G — Event Photo Frame</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="shortcut icon" href="/etc.clientlibs/samsung/clientlibs/consumer/global/clientlib-common/resources/images/Favicon.png">
+<link rel="apple-touch-icon" href="/etc.clientlibs/samsung/clientlibs/consumer/global/clientlib-common/resources/images/app_ico.png" sizes="144x144">
+<style>
+  :root {
+    --stage-max-width: 420px; /* page display width; export stays 1080x1350 */
+  }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 16px;
+    background: #f7f7f8;
+    color: #0f172a;
+    text-align: center;
+  }
+  h2 { margin: 0 0 12px; }
+
+  /* Stage: contains only the canvas and the frame overlay */
+  .stage {
+    position: relative;
+    width: min(100%, var(--stage-max-width));
+    margin: 0 auto;
+    aspect-ratio: calc(1080 / 1350); /* keep 1080x1350 ratio */
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    touch-action: none; /* improves touch interactions */
+  }
+  #photoCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    z-index: 1;
+  }
+  #frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Controls below the stage so they cannot be covered */
+  .controls {
+    width: min(100%, var(--stage-max-width));
+    margin: 14px auto 0;
+  }
+  .actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  /* Styled upload as button using label */
+  .upload-btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: #0ea5e9;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+    font-size: 16px;
+  }
+  .upload-btn input[type="file"] { display: none; }
+
+  .download-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 0;
+    background: #2563eb;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .zoom {
+    margin-top: 2px;
+  }
+  .zoom label {
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  #scaleRange {
+    width: 240px;
+    vertical-align: middle;
+  }
+
+  .hint {
+    width: min(100%, var(--stage-max-width));
+    margin: 8px auto 0;
+    font-size: 12px;
+    color: #475569;
+  }
+</style>
+</head>
+<body>
+  <h2>Start your Galaxy moment</h2>
+
+  <!-- Stage: canvas + frame only -->
+  <div class="stage" aria-label="Photo frame stage">
+    <!-- Internal resolution matches frame for crisp export -->
+    <canvas id="photoCanvas" width="1080" height="1350" aria-label="Photo canvas"></canvas>
+    <!-- IMPORTANT: place your frame file at /assets/frame.png (or .jpg) in your site -->
+    <img id="frame" src="assets/frame.png" alt="Frame overlay">
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="actions">
+      <label class="upload-btn">
+        Upload Photo
+        <input id="fileInput" type="file" accept="image/*" />
+      </label>
+      <button class="download-btn" id="downloadBtn" type="button">Download</button>
+    </div>
+
+    <div class="zoom">
+      <label for="scaleRange">Zoom</label>
+      <input type="range" id="scaleRange" min="0.3" max="3" value="1" step="0.01" />
+    </div>
+  </div>
+
+  <p class="hint">Tip: Use a portrait photo. Drag to reposition; use slider to zoom. Download saves a merged JPEG.</p>
+
+<script>
+  // DOM elements
+  const canvas = document.getElementById('photoCanvas');
+  const ctx = canvas.getContext('2d');
+  const frameImg = document.getElementById('frame');
+  const fileInput = document.getElementById('fileInput');
+  const scaleSlider = document.getElementById('scaleRange');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  // Canvas logical size (export size)
+  const CANVAS_W = canvas.width;   // 1080
+  const CANVAS_H = canvas.height;  // 1350
+
+  // Photo state
+  const photo = new Image();
+  let photoLoaded = false;
+
+  // Transform state (in canvas pixels)
+  let posX = 0, posY = 0, scale = 1;
+
+  // Drag state
+  let isDragging = false, dragStartX = 0, dragStartY = 0;
+
+  // Load user photo
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    photo.onload = () => {
+      photoLoaded = true;
+
+      // Fit to cover canvas (no empty borders under frame)
+      const coverScale = Math.max(CANVAS_W / photo.width, CANVAS_H / photo.height);
+      scale = coverScale;
+      const drawW = photo.width * scale;
+      const drawH = photo.height * scale;
+      posX = (CANVAS_W - drawW) / 2;
+      posY = (CANVAS_H - drawH) / 2;
+
+      // Update slider value to current scale within bounds
+      const minS = parseFloat(scaleSlider.min), maxS = parseFloat(scaleSlider.max);
+      scaleSlider.value = String(Math.min(Math.max(scale, minS), maxS));
+
+      draw();
+      URL.revokeObjectURL(url);
+    };
+    photo.onerror = () => alert('Could not load the selected image. Please try another file.');
+    photo.src = url;
+  });
+
+  // Draw photo to canvas (frame is a DOM overlay)
+  function draw() {
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    if (photoLoaded) {
+      ctx.drawImage(photo, posX, posY, photo.width * scale, photo.height * scale);
+    }
+  }
+
+  // Map client coords to canvas coords (accounts for CSS scaling)
+  function toCanvasPoint(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = CANVAS_W / rect.width;
+    const sy = CANVAS_H / rect.height;
+    return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+  }
+
+  // Mouse drag
+  canvas.addEventListener('mousedown', (e) => {
+    if (!photoLoaded) return;
+    isDragging = true;
+    const p = toCanvasPoint(e.clientX, e.clientY);
+    dragStartX = p.x - posX;
+    dragStartY = p.y - posY;
+    canvas.style.cursor = 'grabbing';
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const p = toCanvasPoint(e.clientX, e.clientY);
+    posX = p.x - dragStartX;
+    posY = p.y - dragStartY;
+    draw();
+  });
+  ['mouseup','mouseleave'].forEach(ev => {
+    canvas.addEventListener(ev, () => { isDragging = false; canvas.style.cursor = 'grab'; });
+  });
+
+  // Touch drag
+  canvas.addEventListener('touchstart', (e) => {
+    if (!photoLoaded || e.touches.length !== 1) return;
+    isDragging = true;
+    const p = toCanvasPoint(e.touches[0].clientX, e.touches[0].clientY);
+    dragStartX = p.x - posX;
+    dragStartY = p.y - posY;
+  }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const p = toCanvasPoint(e.touches[0].clientX, e.touches[0].clientY);
+    posX = p.x - dragStartX;
+    posY = p.y - dragStartY;
+    draw();
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => { isDragging = false; });
+
+  // Zoom slider (zoom around canvas center)
+  scaleSlider.addEventListener('input', (e) => {
+    if (!photoLoaded) return;
+    const newScale = parseFloat(e.target.value);
+    const cx = CANVAS_W / 2, cy = CANVAS_H / 2;
+    posX = cx - (cx - posX) * (newScale / scale);
+    posY = cy - (cy - posY) * (newScale / scale);
+    scale = newScale;
+    draw();
+  });
+
+  // Ensure an <img> has completed loading
+  function ensureLoaded(img) {
+    return new Promise((resolve, reject) => {
+      if (img.complete && img.naturalWidth > 0) return resolve();
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load: ' + (img.src || 'image')));
+    });
+  }
+
+  // Download merged image (JPEG) with platform-appropriate handling
+  downloadBtn.addEventListener('click', async () => {
+    if (!photoLoaded) { alert('Please add a photo first.'); return; }
+
+    try {
+      await ensureLoaded(photo);
+      await ensureLoaded(frameImg);
+    } catch (e) {
+      alert('Images are not loaded yet. Please try again.');
+      return;
+    }
+
+    // Compose on an offscreen canvas at 1080x1350
+    const out = document.createElement('canvas');
+    out.width = CANVAS_W; out.height = CANVAS_H;
+    const octx = out.getContext('2d');
+
+    // Optional white background (good for JPEG)
+    octx.fillStyle = '#ffffff';
+    octx.fillRect(0, 0, out.width, out.height);
+
+    // Draw user photo and then frame on top
+    octx.drawImage(photo, posX, posY, photo.width * scale, photo.height * scale);
+    octx.drawImage(frameImg, 0, 0, out.width, out.height);
+
+    // Export as JPEG
+    let dataUrl;
+    try {
+      dataUrl = out.toDataURL('image/jpeg', 0.92);
+    } catch (err) {
+      alert('Export failed. Make sure the frame is served from this same site (assets/frame.png or .jpg).');
+      return;
+    }
+
+    // iOS Safari limitation: download attribute often ignored; open in new tab
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      const w = window.open();
+      if (w) {
+        w.document.location = dataUrl;
+      } else {
+        const a = document.createElement('a');
+        a.href = dataUrl; a.target = '_blank'; a.rel = 'noopener'; a.click();
+      }
+      return;
+    }
+
+    // Standard download for desktop/Android browsers
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'galaxy_a17_5g_photo.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+</script>
+</body>
+</html>
